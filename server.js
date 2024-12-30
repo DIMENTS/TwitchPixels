@@ -1,4 +1,4 @@
-const WebSocket = require('ws');
+const { WebSocketServer } = require('ws');
 const sqlite3 = require('sqlite3').verbose();
 
 // Database setup
@@ -41,12 +41,20 @@ const saveGrid = (grid, callback) => {
   });
 };
 
-// WebSocket-server instellen
-const server = new WebSocket.Server({ port: 8083 });
+// HTTP-server en WebSocket-server instellen
+const http = require('http');
+
+const server = http.createServer((req, res) => {
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/plain');
+  res.end('WebSocket server running');
+});
+
+const wss = new WebSocketServer({ server });
 const grid = {}; // Object voor pixeldata
 const cooldowns = new Map(); // Cooldown-timers voor gebruikers
 
-server.on('connection', (socket) => {
+wss.on('connection', (socket) => {
   console.log('Nieuwe gebruiker verbonden');
 
   // Stuur de huidige grid naar nieuwe gebruikers
@@ -69,8 +77,8 @@ server.on('connection', (socket) => {
         grid[`${x},${y}`] = color; // Sla de pixel op in de grid
         saveGrid(grid, () => {
           // Stuur de update naar alle gebruikers
-          server.clients.forEach((client) => {
-            if (client.readyState === WebSocket.OPEN) {
+          wss.clients.forEach((client) => {
+            if (client.readyState === socket.OPEN) {
               client.send(JSON.stringify({ type: 'update_pixel', x, y, color }));
             }
           });
@@ -81,8 +89,8 @@ server.on('connection', (socket) => {
         const { userId, x, y } = data;
 
         // Stuur muiscoördinaten door naar alle andere gebruikers
-        server.clients.forEach((client) => {
-          if (client !== socket && client.readyState === WebSocket.OPEN) {
+        wss.clients.forEach((client) => {
+          if (client !== socket && client.readyState === socket.OPEN) {
             client.send(JSON.stringify({ type: 'mouse_move', userId, x, y }));
           }
         });
@@ -93,4 +101,9 @@ server.on('connection', (socket) => {
   });
 });
 
-console.log('WebSocket-server draait op ws://localhost:8083');
+// Gebruik de juiste poort op Vercel
+server.listen(8080, () => {
+  console.log('Server running on port 8080');
+});
+
+module.exports = server;
