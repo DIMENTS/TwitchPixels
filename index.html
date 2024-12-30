@@ -137,6 +137,7 @@
     const ctx = canvas.getContext('2d');
     const startOverlay = document.getElementById('start-overlay');
     const startButton = document.getElementById('start-button');
+    const overlayShownKey = 'startOverlayShown';
     const cooldownIndicator = document.getElementById('cooldown-indicator');
     const gridSize = 1000;
     const cellSize = 10;
@@ -159,6 +160,11 @@
     startButton.addEventListener('click', () => {
       startOverlay.style.display = 'none';
     });
+
+    if (localStorage.getItem(overlayShownKey) === 'true') {
+            startOverlay.style.display = 'none'; // Verberg de overlay als deze al is getoond
+            localStorage.setItem(overlayShownKey, 'true');
+        }
 
     // Cooldown Indicator
     const startCooldown = (seconds) => {
