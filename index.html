@@ -141,7 +141,24 @@
     const cooldownIndicator = document.getElementById('cooldown-indicator');
     const gridSize = 1000;
     const cellSize = 10;
-    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#000000', '#FFFFFF'];
+    
+    const colors = [
+    '#000000', // Zwart
+    '#FFFFFF', // Wit (voor eventuele correcties)
+    '#FF0000', // Rood
+    '#00FF00', // Groen
+    '#0000FF', // Blauw
+    '#FFA500', // Oranje
+    '#800000', // Bordeax
+    '#006400', // Donkergroen
+    '#404040', // Donkergrijs
+    '#00008B', // Donkerblauw
+    '#FF69B4', // Roze
+    '#FFFF00', // Geel
+    '#4B0082', // Indigo
+    '#800080'  // Paars
+    ];
+    
     let selectedColor = colors[0];
 
     const userId = Math.random().toString(36).substr(2, 9); // Voeg deze regel toe
