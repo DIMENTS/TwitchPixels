@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Twitch /Place - Community Pixel Art</title>
-  <link rel="icon" href="/twitchpixelsico.png" type="image/x-icon">  <style>
+  <link rel="icon" href="/twitchpixelsico.png" type="image/x-icon">
+  <style>
     body {
       margin: 0;
       overflow: hidden;
@@ -12,14 +13,13 @@
     }
 
     #canvas {
-    display: block;
-    cursor: crosshair;
-    border: 2px solid #000;
-    box-sizing: border-box;
-    max-width: 100vw;
-    max-height: 100vh;
-    margin: auto; /* Centeert het canvas */
-}
+      display: block;
+      cursor: crosshair;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      max-width: 100vw;
+      max-height: 100vh;
+      margin: auto; /* Centeert het canvas */
+    }
 
     #color-picker {
       position: fixed;
@@ -36,13 +36,13 @@
     }
 
     .color {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  cursor: pointer;
-  border: 1px solid #c4c4c4; /* Light grey border */
-  transition: border 0.2s;
-}
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 1px solid #c4c4c4; /* Light grey border */
+      transition: border 0.2s;
+    }
 
     .color:hover,
     .color.selected {
@@ -50,56 +50,56 @@
     }
 
     #start-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    color: white;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    z-index: 10;
-    text-align: center; /* Center de tekst horizontaal */
-}
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      color: white;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 10;
+      text-align: center; /* Center de tekst horizontaal */
+    }
 
     #start-overlay h1 {
-    font-size: 2em;
-    margin-bottom: 20px;
-}
+      font-size: 2em;
+      margin-bottom: 20px;
+    }
 
     .twitch-purple {
-    color: #9146FF; /* Twitch paars */
-}
+      color: #9146FF; /* Twitch paars */
+    }
 
-.place-offwhite {
-    color: #F5F5F5; /* Off-white / bijna wit */
-}
+    .place-offwhite {
+      color: #F5F5F5; /* Off-white / bijna wit */
+    }
 
-#start-overlay p {
-    font-size: 1.2em;
-    margin-bottom: 40px;
-    padding: 0 20px;
-    max-width: 840px; /* Maximale breedte van de tekst */
-    line-height: 1.5; /* Voor betere leesbaarheid */
-}
+    #start-overlay p {
+      font-size: 1.2em;
+      margin-bottom: 40px;
+      padding: 0 20px;
+      max-width: 840px; /* Maximale breedte van de tekst */
+      line-height: 1.5; /* Voor betere leesbaarheid */
+    }
 
     #start-overlay button {
-    padding: 15px 30px; /* Iets grotere padding */
-    font-size: 1.2em;
-    background: #F5F5F5; /* Off-white achtergrond */
-    color: black; /* Zwarte tekst voor contrast */
-    border: none;
-    border-radius: 50px; /* Ronde knop */
-    cursor: pointer;
-    transition: background-color 0.3s ease; /* Soepele overgang bij hover */
-}
+      padding: 15px 30px; /* Iets grotere padding */
+      font-size: 1.2em;
+      background: #F5F5F5; /* Off-white achtergrond */
+      color: black; /* Zwarte tekst voor contrast */
+      border: none;
+      border-radius: 50px; /* Ronde knop */
+      cursor: pointer;
+      transition: background-color 0.3s ease; /* Soepele overgang bij hover */
+    }
 
-#start-overlay button:hover {
-    background: #E0E0E0; /* Iets donkerder off-white bij hover */
-}
+    #start-overlay button:hover {
+      background: #E0E0E0; /* Iets donkerder off-white bij hover */
+    }
 
     #cooldown-indicator {
       position: fixed;
@@ -122,15 +122,15 @@
 
   <div id="start-overlay">
     <h1>
-        <span class="twitch-purple">Twitch</span>
-        <span class="place-offwhite">/Place</span>!
+      <span class="twitch-purple">Twitch</span>
+      <span class="place-offwhite">/Place</span>!
     </h1>
     <p>
-        Klik op een pixel om een kleur te plaatsen. Je moet 30 seconden wachten voordat je weer een pixel kunt plaatsen.
-        Gebruik je muis of pijltjestoetsen om over de grid te navigeren. Zoom in en uit met je scrollwheel.
+      Klik op een pixel om een kleur te plaatsen. Je moet 30 seconden wachten voordat je weer een pixel kunt plaatsen.
+      Gebruik je muis of pijltjestoetsen om over de grid te navigeren. Zoom in en uit met je scrollwheel.
     </p>
     <button id="start-button">Start</button>
-</div>
+  </div>
 
   <div id="cooldown-indicator">Cooldown: 30s</div>
 
@@ -144,78 +144,28 @@
     const cooldownIndicator = document.getElementById('cooldown-indicator');
     const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
     const cellSize = 10;
-    const canvasBorder = 2;
-    
-    const colors = [
-    '#000000', // Zwart
-    '#FFFFFF', // Wit (voor eventuele correcties)
-    '#FF0000', // Rood
-    '#00FF00', // Groen
-    '#0000FF', // Blauw
-    '#800000', // Bordeax
-    '#00008B', // Donkerblauw
-    '#FFFF00', // Geel
-    ];
-    
+    const colors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#800000', '#00008B', '#FFFF00'];
     let selectedColor = colors[0];
-
-    const userId = Math.random().toString(36).substr(2, 9); // Voeg deze regel toe
-
     let grid = {};
     let activeUsers = {};
     let scale = 1, offsetX = 0, offsetY = 0;
     let isPanning = false, startX, startY;
     let cooldownActive = false;
 
-    // Bereken de canvas afmetingen, rekening houdend met de grid en de viewport
-    const canvasWidth = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerWidth);
-    const canvasHeight = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerHeight);
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    //Centreren van de grid op de canvas
+    // Center grid initially
     offsetX = (canvas.width - gridSize * cellSize) / 2;
     offsetY = (canvas.height - gridSize * cellSize) / 2;
-    offsetX = Math.max(0, offsetX);
-    offsetY = Math.max(0, offsetY);
-    
-    // Start Overlay Verwijderen
-    startButton.addEventListener('click', () => {
-      startOverlay.style.display = 'none';
-    });
 
-    if (localStorage.getItem(overlayShownKey) === 'true') {
-            startOverlay.style.display = 'none'; // Verberg de overlay als deze al is getoond
-            localStorage.setItem(overlayShownKey, 'true');
-        }
-
-    // Cooldown Indicator
-    const startCooldown = (seconds) => {
-  cooldownActive = true;
-  cooldownIndicator.style.display = 'block';
-  cooldownIndicator.textContent = `Cooldown: ${seconds}s`;
-  let remaining = seconds;
-
-  const interval = setInterval(() => {
-    remaining--;
-    cooldownIndicator.textContent = `Cooldown: ${remaining}s`;
-
-    if (remaining <= 0) {
-      clearInterval(interval);
-      cooldownIndicator.style.display = 'none';
-      cooldownActive = false;
-    }
-  }, 1000);
-};
-
-
-    // Grid tekenen
     const drawGrid = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       ctx.save();
-      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+      ctx.translate(offsetX, offsetY);
+      ctx.scale(scale, scale);
 
+      // Draw base grid
       for (let x = 0; x < gridSize; x++) {
         for (let y = 0; y < gridSize; y++) {
           ctx.fillStyle = '#FFFFFF';
@@ -223,19 +173,11 @@
         }
       }
 
-      // Teken pixels
+      // Draw pixels
       Object.entries(grid).forEach(([key, color]) => {
         const [x, y] = key.split(',').map(Number);
         ctx.fillStyle = color;
         ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-      });
-
-      // Teken actieve muisindicaties
-      Object.values(activeUsers).forEach(({ x, y }) => {
-        ctx.beginPath();
-        ctx.arc(x, y, 5 / scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fill();
       });
 
       ctx.restore();
@@ -383,38 +325,21 @@ window.addEventListener('resize', () => {
     });
 
     canvas.addEventListener('wheel', (event) => {
-    event.preventDefault();
+      event.preventDefault();
 
-    const prevScale = scale;
-    scale += event.deltaY * -0.001;
-    scale = Math.min(Math.max(0.5, scale), 4);
+      const zoomFactor = 1.05;
+      const mouseX = (event.clientX - offsetX) / scale;
+      const mouseY = (event.clientY - offsetY) / scale;
 
-    // Correctie voor offset tijdens zoomen (belangrijk!)
-    const zoomFactor = scale / prevScale;
-    offsetX = (offsetX - event.clientX) * zoomFactor + event.clientX;
-    offsetY = (offsetY - event.clientY) * zoomFactor + event.clientY;
+      if (event.deltaY < 0) scale *= zoomFactor;
+      else scale /= zoomFactor;
 
+      offsetX = event.clientX - mouseX * scale;
+      offsetY = event.clientY - mouseY * scale;
 
-    // Grens controle (zoals in de vorige reactie, maar nu correct met de zoom correctie)
-    if (gridSize * cellSize * scale > canvas.width) {
-        const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-        offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
-    }
-    else{
-        offsetX = (canvas.width - gridSize * cellSize * scale) / 2
-    }
-
-    if (gridSize * cellSize * scale > canvas.height) {
-        const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-        offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
-    }
-    else{
-        offsetY = (canvas.height - gridSize * cellSize * scale) / 2
-    }
-
-    drawGrid();
-});
-
+      drawGrid();
+    });
+    
     // Color picker
     const colorPicker = document.getElementById('color-picker');
     colors.forEach((color) => {
