@@ -345,10 +345,9 @@ window.addEventListener('resize', () => {
         offsetX = event.clientX - startX;
         offsetY = event.clientY - startY;
 
-        // Alleen grenzen toepassen als de grid GROTER is dan het canvas
         if (gridSize * cellSize * scale > canvas.width) {
             const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-            offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX); // Correcte begrenzing
+            offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
         }
         else{
             offsetX = (canvas.width - gridSize * cellSize * scale) / 2
@@ -356,7 +355,7 @@ window.addEventListener('resize', () => {
 
         if (gridSize * cellSize * scale > canvas.height) {
             const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-            offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY); // Correcte begrenzing
+            offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
         }
         else{
             offsetY = (canvas.height - gridSize * cellSize * scale) / 2
@@ -364,7 +363,14 @@ window.addEventListener('resize', () => {
 
         drawGrid();
     }
-    });
+    else{
+        const rect = canvas.getBoundingClientRect();
+        const x = (event.clientX - rect.left - offsetX) / scale;
+        const y = (event.clientY - rect.top - offsetY) / scale;
+
+        socket.send(JSON.stringify({ type: 'move_mouse', userId, x, y }));
+    }
+});
 
     canvas.addEventListener('mousedown', (event) => {
       isPanning = true;
@@ -378,17 +384,21 @@ window.addEventListener('resize', () => {
 
     canvas.addEventListener('wheel', (event) => {
     event.preventDefault();
+
     const prevScale = scale;
     scale += event.deltaY * -0.001;
     scale = Math.min(Math.max(0.5, scale), 4);
 
-    offsetX -= (event.clientX - canvas.offsetLeft) * (scale - prevScale);
-    offsetY -= (event.clientY - canvas.offsetTop) * (scale - prevScale);
+    // Correctie voor offset tijdens zoomen (belangrijk!)
+    const zoomFactor = scale / prevScale;
+    offsetX = (offsetX - event.clientX) * zoomFactor + event.clientX;
+    offsetY = (offsetY - event.clientY) * zoomFactor + event.clientY;
 
-    // Alleen grenzen toepassen als de grid GROTER is dan het canvas
+
+    // Grens controle (zoals in de vorige reactie, maar nu correct met de zoom correctie)
     if (gridSize * cellSize * scale > canvas.width) {
         const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-        offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX); // Correcte begrenzing
+        offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
     }
     else{
         offsetX = (canvas.width - gridSize * cellSize * scale) / 2
@@ -396,7 +406,7 @@ window.addEventListener('resize', () => {
 
     if (gridSize * cellSize * scale > canvas.height) {
         const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-        offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY); // Correcte begrenzing
+        offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
     }
     else{
         offsetY = (canvas.height - gridSize * cellSize * scale) / 2
