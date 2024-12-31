@@ -33,13 +33,13 @@
     }
 
     .color {
-      width: 30px;
-      height: 30px;
-      border-radius: 50%;
-      cursor: pointer;
-      border: 2px solid transparent;
-      transition: border 0.2s;
-    }
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid #c4c4c4; /* Light grey border */
+  transition: border 0.2s;
+}
 
     .color:hover,
     .color.selected {
@@ -139,7 +139,7 @@
     const startButton = document.getElementById('start-button');
     const overlayShownKey = 'startOverlayShown';
     const cooldownIndicator = document.getElementById('cooldown-indicator');
-    const gridSize = 1000;
+    const gridSize = 500;
     const cellSize = 10;
     
     const colors = [
