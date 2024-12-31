@@ -135,30 +135,30 @@
   <div id="cooldown-indicator">Cooldown: 30s</div>
 
   <script>
+  // Selecteer DOM-elementen
   const socket = new WebSocket('wss://tpwebsocket-production.up.railway.app');
   const canvas = document.getElementById('canvas');
   const ctx = canvas.getContext('2d');
   const startOverlay = document.getElementById('start-overlay');
   const startButton = document.getElementById('start-button');
-  const overlayShownKey = 'startOverlayShown';
   const cooldownIndicator = document.getElementById('cooldown-indicator');
-  const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
+  const overlayShownKey = 'startOverlayShown';
+
+  // Variabelen voor de grid
+  const gridSize = 500;
   const cellSize = 10;
   const colors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#800000', '#00008B', '#FFFF00'];
   let selectedColor = colors[0];
   let grid = {};
-  let activeUsers = {};
-  let scale = 1, offsetX = 0, offsetY = 0;
+  let scale = 1;
+  let offsetX = (canvas.width - gridSize * cellSize) / 2;
+  let offsetY = (canvas.height - gridSize * cellSize) / 2;
   let isPanning = false, startX, startY;
   let cooldownActive = false;
 
-  // Zorg ervoor dat het canvas de volledige grootte van het venster gebruikt
+  // Maak canvas responsief
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
-
-  // Center grid initially
-  offsetX = (canvas.width - gridSize * cellSize) / 2;
-  offsetY = (canvas.height - gridSize * cellSize) / 2;
 
   // Teken de grid
   const drawGrid = () => {
@@ -191,24 +191,23 @@
   // Startknop functionaliteit
   startButton.addEventListener('click', () => {
     startOverlay.style.display = 'none'; // Verberg de overlay
-    localStorage.setItem(overlayShownKey, 'true'); // Sla op dat de overlay is getoond
+    localStorage.setItem(overlayShownKey, 'true'); // Markeer overlay als getoond
   });
 
-  // Controleer of de overlay al eerder is getoond
+  // Controleer of de overlay moet worden getoond
   if (localStorage.getItem(overlayShownKey) === 'true') {
-    startOverlay.style.display = 'none'; // Verberg de overlay als deze al eerder is getoond
+    startOverlay.style.display = 'none';
   }
 
-  // Functie om te zoomen
+  // Canvas interactie: Zoomen
   canvas.addEventListener('wheel', (event) => {
     event.preventDefault();
-
     const zoomFactor = 1.05;
     const mouseX = (event.clientX - offsetX) / scale;
     const mouseY = (event.clientY - offsetY) / scale;
 
-    if (event.deltaY < 0) scale *= zoomFactor; // Zoom in
-    else scale /= zoomFactor; // Zoom uit
+    if (event.deltaY < 0) scale *= zoomFactor;
+    else scale /= zoomFactor;
 
     offsetX = event.clientX - mouseX * scale;
     offsetY = event.clientY - mouseY * scale;
@@ -216,7 +215,7 @@
     drawGrid();
   });
 
-  // Andere functies voor interactie
+  // Canvas interactie: Pannen
   canvas.addEventListener('mousedown', (event) => {
     isPanning = true;
     startX = event.clientX;
@@ -233,13 +232,8 @@
     }
   });
 
-  canvas.addEventListener('mouseup', () => {
-    isPanning = false;
-  });
-
-  canvas.addEventListener('mouseleave', () => {
-    isPanning = false;
-  });
+  canvas.addEventListener('mouseup', () => (isPanning = false));
+  canvas.addEventListener('mouseleave', () => (isPanning = false));
 
   // Voeg kleuren toe aan de color picker
   const colorPicker = document.getElementById('color-picker');
@@ -248,7 +242,7 @@
     colorDiv.classList.add('color');
     colorDiv.style.backgroundColor = color;
     colorDiv.addEventListener('click', () => {
-      document.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+      document.querySelectorAll('.color').forEach((c) => c.classList.remove('selected'));
       colorDiv.classList.add('selected');
       selectedColor = color;
     });
@@ -256,10 +250,7 @@
   });
 
   // WebSocket interactie
-  socket.addEventListener('open', () => {
-    console.log('Connected to WebSocket server');
-  });
-
+  socket.addEventListener('open', () => console.log('Connected to WebSocket server'));
   socket.addEventListener('message', (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'update') {
@@ -268,6 +259,7 @@
     }
   });
 
+  // Pixel plaatsen
   canvas.addEventListener('click', (event) => {
     if (cooldownActive) return;
 
@@ -295,5 +287,6 @@
     }, 1000);
   });
 </script>
+
 </body>
 </html>
