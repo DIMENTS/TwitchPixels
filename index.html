@@ -345,13 +345,22 @@ window.addEventListener('resize', () => {
         offsetX = event.clientX - startX;
         offsetY = event.clientY - startY;
 
-        // Belangrijk: grenzen baseren op de GRID
-        const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-        const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
+        // Alleen grenzen toepassen als de grid GROTER is dan het canvas
+        if (gridSize * cellSize * scale > canvas.width) {
+            const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
+            offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX); // Correcte begrenzing
+        }
+        else{
+            offsetX = (canvas.width - gridSize * cellSize * scale) / 2
+        }
 
-        // Zorg ervoor dat de grid altijd volledig zichtbaar is
-        offsetX = Math.max(Math.min(offsetX, -maxOffsetX), 0);
-        offsetY = Math.max(Math.min(offsetY, -maxOffsetY), 0);
+        if (gridSize * cellSize * scale > canvas.height) {
+            const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
+            offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY); // Correcte begrenzing
+        }
+        else{
+            offsetY = (canvas.height - gridSize * cellSize * scale) / 2
+        }
 
         drawGrid();
     }
@@ -376,13 +385,23 @@ window.addEventListener('resize', () => {
     offsetX -= (event.clientX - canvas.offsetLeft) * (scale - prevScale);
     offsetY -= (event.clientY - canvas.offsetTop) * (scale - prevScale);
 
-    // Belangrijk: grenzen baseren op de GRID
+    // Alleen grenzen toepassen als de grid GROTER is dan het canvas
+    if (gridSize * cellSize * scale > canvas.width) {
         const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-        const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
+        offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX); // Correcte begrenzing
+    }
+    else{
+        offsetX = (canvas.width - gridSize * cellSize * scale) / 2
+    }
 
-        // Zorg ervoor dat de grid altijd volledig zichtbaar is
-        offsetX = Math.max(Math.min(offsetX, -maxOffsetX), 0);
-        offsetY = Math.max(Math.min(offsetY, -maxOffsetY), 0);
+    if (gridSize * cellSize * scale > canvas.height) {
+        const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
+        offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY); // Correcte begrenzing
+    }
+    else{
+        offsetY = (canvas.height - gridSize * cellSize * scale) / 2
+    }
+
     drawGrid();
 });
 
