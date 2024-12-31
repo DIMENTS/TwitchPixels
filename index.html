@@ -252,14 +252,25 @@
 
     // Pixel plaatsen
     canvas.addEventListener('click', (e) => {
-        if (cooldownActive) return;
-        const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
-        const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
-        socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
-        grid[`${x},${y}`] = selectedColor;
-        drawGrid();
-        startCooldown(30);
-    });
+    if (cooldownActive) return;
+    
+    // Bereken de cell-coördinaten
+    const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
+    const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
+    
+    // Controleer of de coördinaten binnen het grid vallen
+    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
+        console.log('Pixel buiten bereik geplaatst!');
+        return; // Stop als de coördinaten buiten het raster vallen
+    }
+
+    // Verstuur de pixel-update naar de server
+    socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
+    grid[`${x},${y}`] = selectedColor;
+    drawGrid();
+    startCooldown(30);
+});
+
 
     // Zoom en Pan
     canvas.addEventListener('wheel', (event) => {
