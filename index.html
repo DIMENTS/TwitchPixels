@@ -146,293 +146,170 @@
     const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
     const cellSize = 10;
     const canvasBorder = 2;
-    
+
     const colors = [
-    '#000000', // Zwart
-    '#FFFFFF', // Wit (voor eventuele correcties)
-    '#FF0000', // Rood
-    '#00FF00', // Groen
-    '#0000FF', // Blauw
-    '#800000', // Bordeax
-    '#00008B', // Donkerblauw
-    '#FFFF00', // Geel
+        '#000000', '#FFFFFF', '#FF0000', '#00FF00',
+        '#0000FF', '#800000', '#00008B', '#FFFF00'
     ];
-    
     let selectedColor = colors[0];
-
-    const userId = Math.random().toString(36).substr(2, 9); // Voeg deze regel toe
-
+    const userId = Math.random().toString(36).substr(2, 9);
     let grid = {};
     let activeUsers = {};
     let scale = 1, offsetX = 0, offsetY = 0;
     let isPanning = false, startX, startY;
     let cooldownActive = false;
 
-    // Bereken de canvas afmetingen, rekening houdend met de grid en de viewport
-    const canvasWidth = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerWidth);
-    const canvasHeight = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerHeight);
+    // Bereken canvas-grootte en centreren
+    const calculateCanvasDimensions = () => {
+        canvas.width = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerWidth);
+        canvas.height = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerHeight);
+        offsetX = (canvas.width - gridSize * cellSize * scale) / 2;
+        offsetY = (canvas.height - gridSize * cellSize * scale) / 2;
+        offsetX = Math.max(0, offsetX);
+        offsetY = Math.max(0, offsetY);
+    };
+    calculateCanvasDimensions();
 
-    canvas.width = canvasWidth;
-    canvas.height = canvasHeight;
-
-    //Centreren van de grid op de canvas
-    offsetX = (canvas.width - gridSize * cellSize) / 2;
-    offsetY = (canvas.height - gridSize * cellSize) / 2;
-    offsetX = Math.max(0, offsetX);
-    offsetY = Math.max(0, offsetY);
-    
-    // Start Overlay Verwijderen
+    // Overlay functionaliteit
     startButton.addEventListener('click', () => {
-      startOverlay.style.display = 'none';
+        startOverlay.style.display = 'none';
+        localStorage.setItem(overlayShownKey, 'true');
     });
 
     if (localStorage.getItem(overlayShownKey) === 'true') {
-            startOverlay.style.display = 'none'; // Verberg de overlay als deze al is getoond
-            localStorage.setItem(overlayShownKey, 'true');
-        }
-
-    // Cooldown Indicator
-    const startCooldown = (seconds) => {
-  cooldownActive = true;
-  cooldownIndicator.style.display = 'block';
-  cooldownIndicator.textContent = `Cooldown: ${seconds}s`;
-  let remaining = seconds;
-
-  const interval = setInterval(() => {
-    remaining--;
-    cooldownIndicator.textContent = `Cooldown: ${remaining}s`;
-
-    if (remaining <= 0) {
-      clearInterval(interval);
-      cooldownIndicator.style.display = 'none';
-      cooldownActive = false;
+        startOverlay.style.display = 'none';
     }
-  }, 1000);
-};
 
+    // Cooldown
+    const startCooldown = (seconds) => {
+        cooldownActive = true;
+        cooldownIndicator.style.display = 'block';
+        cooldownIndicator.textContent = `Cooldown: ${seconds}s`;
+        let remaining = seconds;
+        const interval = setInterval(() => {
+            remaining--;
+            cooldownIndicator.textContent = `Cooldown: ${remaining}s`;
+            if (remaining <= 0) {
+                clearInterval(interval);
+                cooldownIndicator.style.display = 'none';
+                cooldownActive = false;
+            }
+        }, 1000);
+    };
 
     // Grid tekenen
     const drawGrid = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.save();
-      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-      for (let x = 0; x < gridSize; x++) {
-        for (let y = 0; y < gridSize; y++) {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        // Teken raster
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                ctx.fillStyle = '#FFFFFF';
+                ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
         }
-      }
 
-      // Teken pixels
-      Object.entries(grid).forEach(([key, color]) => {
-        const [x, y] = key.split(',').map(Number);
-        ctx.fillStyle = color;
-        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-      });
+        // Teken pixels
+        Object.entries(grid).forEach(([key, color]) => {
+            const [x, y] = key.split(',').map(Number);
+            ctx.fillStyle = color;
+            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        });
 
-      // Teken actieve muisindicaties
-      Object.values(activeUsers).forEach(({ x, y }) => {
-        ctx.beginPath();
-        ctx.arc(x, y, 5 / scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fill();
-      });
+        // Teken actieve gebruikers
+        Object.values(activeUsers).forEach(({ x, y }) => {
+            ctx.beginPath();
+            ctx.arc(x, y, 5 / scale, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+            ctx.fill();
+        });
 
-      ctx.restore();
+        ctx.restore();
     };
 
     drawGrid();
 
     // WebSocket handlers
     socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === 'init') {
-        grid = data.grid;
-        drawGrid();
-      } else if (data.type === 'update_pixel') {
-        const { x, y, color } = data;
-        grid[`${x},${y}`] = color;
-        drawGrid();
-      } else if (data.type === 'mouse_move') {
-        activeUsers[data.userId] = { x: data.x / scale - offsetX / scale, y: data.y / scale - offsetY / scale };
-        drawGrid();
-      }
+        const data = JSON.parse(event.data);
+        if (data.type === 'init') {
+            grid = data.grid;
+            drawGrid();
+        } else if (data.type === 'update_pixel') {
+            const { x, y, color } = data;
+            grid[`${x},${y}`] = color;
+            drawGrid();
+        } else if (data.type === 'mouse_move') {
+            activeUsers[data.userId] = {
+                x: data.x / scale - offsetX / scale,
+                y: data.y / scale - offsetY / scale,
+            };
+            drawGrid();
+        }
     };
 
-    // Plaats pixel
+    // Pixel plaatsen
     canvas.addEventListener('click', (e) => {
-  if (cooldownActive) return; // Blokkeer als de cooldown actief is
-
-  const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
-  const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
-
-  // Verzend pixelplaatsing naar de server
-  socket.send(JSON.stringify({
-    type: 'place_pixel',
-    userId,
-    x,
-    y,
-    color: selectedColor,
-  }));
-
-  // Voeg de pixel lokaal toe aan de grid
-  grid[`${x},${y}`] = selectedColor;
-  drawGrid();
-
-  // Start de cooldown-timer
-  startCooldown(30);
-});
-
-// Voor touch ondersteuning
-let lastTouchDistance = null;
-
-canvas.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 1) {
-    isPanning = true;
-    startX = e.touches[0].clientX - offsetX;
-    startY = e.touches[0].clientY - offsetY;
-  } else if (e.touches.length === 2) {
-    lastTouchDistance = getTouchDistance(e);
-  }
-});
-
-canvas.addEventListener('touchmove', (e) => {
-  e.preventDefault(); // Voorkomt scrollen op mobiel
-  if (e.touches.length === 1 && isPanning) {
-    const touch = e.touches[0];
-    offsetX = touch.clientX - startX;
-    offsetY = touch.clientY - startY;
-    drawGrid();
-  } else if (e.touches.length === 2) {
-    const newDistance = getTouchDistance(e);
-    if (lastTouchDistance) {
-      const delta = newDistance / lastTouchDistance;
-      scale *= delta;
-      scale = Math.min(Math.max(0.5, scale), 10); // Beperk de zoomfactor
-      lastTouchDistance = newDistance;
-      drawGrid();
-    }
-  }
-});
-
-canvas.addEventListener('touchend', (e) => {
-  if (e.touches.length < 2) {
-    lastTouchDistance = null;
-  }
-  isPanning = false;
-});
-
-// Helper functie om afstand tussen twee aanrakingen te berekenen
-function getTouchDistance(e) {
-  const dx = e.touches[0].clientX - e.touches[1].clientX;
-  const dy = e.touches[0].clientY - e.touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Responsive canvas aanpassen bij schermgrootte
-window.addEventListener('resize', () => {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-  drawGrid();
-});
-
-
-
-    // Muis beweging
-    canvas.addEventListener('mousemove', (event) => {
-    if (isPanning) {
-        offsetX = event.clientX - startX;
-        offsetY = event.clientY - startY;
-
-        if (gridSize * cellSize * scale > canvas.width) {
-            const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-            offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
-        }
-        else{
-            offsetX = (canvas.width - gridSize * cellSize * scale) / 2
-        }
-
-        if (gridSize * cellSize * scale > canvas.height) {
-            const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-            offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
-        }
-        else{
-            offsetY = (canvas.height - gridSize * cellSize * scale) / 2
-        }
-
+        if (cooldownActive) return;
+        const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
+        const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
+        socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
+        grid[`${x},${y}`] = selectedColor;
         drawGrid();
-    }
-    else{
-        const rect = canvas.getBoundingClientRect();
-        const x = (event.clientX - rect.left - offsetX) / scale;
-        const y = (event.clientY - rect.top - offsetY) / scale;
+        startCooldown(30);
+    });
 
-        socket.send(JSON.stringify({ type: 'move_mouse', userId, x, y }));
-    }
-});
+    // Zoom en Pan
+    canvas.addEventListener('wheel', (event) => {
+        event.preventDefault();
+        const prevScale = scale;
+        scale += event.deltaY * -0.001;
+        scale = Math.min(Math.max(0.5, scale), 4);
+        const zoomFactor = scale / prevScale;
+        offsetX = (offsetX - event.clientX) * zoomFactor + event.clientX;
+        offsetY = (offsetY - event.clientY) * zoomFactor + event.clientY;
+        drawGrid();
+    });
 
     canvas.addEventListener('mousedown', (event) => {
-      isPanning = true;
-      startX = event.clientX - offsetX;
-      startY = event.clientY - offsetY;
+        isPanning = true;
+        startX = event.clientX - offsetX;
+        startY = event.clientY - offsetY;
+    });
+
+    canvas.addEventListener('mousemove', (event) => {
+        if (isPanning) {
+            offsetX = event.clientX - startX;
+            offsetY = event.clientY - startY;
+            drawGrid();
+        } else {
+            const rect = canvas.getBoundingClientRect();
+            const x = (event.clientX - rect.left - offsetX) / scale;
+            const y = (event.clientY - rect.top - offsetY) / scale;
+            socket.send(JSON.stringify({ type: 'move_mouse', userId, x, y }));
+        }
     });
 
     canvas.addEventListener('mouseup', () => {
-      isPanning = false;
+        isPanning = false;
     });
 
-    canvas.addEventListener('wheel', (event) => {
-    event.preventDefault();
-
-    const prevScale = scale;
-    scale += event.deltaY * -0.001;
-    scale = Math.min(Math.max(0.5, scale), 4);
-
-    // Correctie voor offset tijdens zoomen (belangrijk!)
-    const zoomFactor = scale / prevScale;
-    offsetX = (offsetX - event.clientX) * zoomFactor + event.clientX;
-    offsetY = (offsetY - event.clientY) * zoomFactor + event.clientY;
-
-
-    // Grens controle (zoals in de vorige reactie, maar nu correct met de zoom correctie)
-    if (gridSize * cellSize * scale > canvas.width) {
-        const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-        offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
-    }
-    else{
-        offsetX = (canvas.width - gridSize * cellSize * scale) / 2
-    }
-
-    if (gridSize * cellSize * scale > canvas.height) {
-        const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-        offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
-    }
-    else{
-        offsetY = (canvas.height - gridSize * cellSize * scale) / 2
-    }
-
-    drawGrid();
-});
-
-    // Color picker
+    // Kleuren selecteren
     const colorPicker = document.getElementById('color-picker');
     colors.forEach((color) => {
-      const div = document.createElement('div');
-      div.className = 'color';
-      div.style.backgroundColor = color;
-
-      if (color === selectedColor) div.classList.add('selected');
-
-      div.addEventListener('click', () => {
-        document.querySelectorAll('.color').forEach((el) => el.classList.remove('selected'));
-        div.classList.add('selected');
-        selectedColor = color;
-      });
-
-      colorPicker.appendChild(div);
+        const div = document.createElement('div');
+        div.className = 'color';
+        div.style.backgroundColor = color;
+        if (color === selectedColor) div.classList.add('selected');
+        div.addEventListener('click', () => {
+            document.querySelectorAll('.color').forEach((el) => el.classList.remove('selected'));
+            div.classList.add('selected');
+            selectedColor = color;
+        });
+        colorPicker.appendChild(div);
     });
-  </script>
+</script>
 </body>
 </html>
