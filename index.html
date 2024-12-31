@@ -260,8 +260,8 @@
     
     // Controleer of de coördinaten binnen het grid vallen
     if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
-        console.log('Pixel buiten bereik geplaatst!');
-        return; // Stop als de coördinaten buiten het raster vallen
+    alert('Je kunt hier geen pixels plaatsen! Kies een plek binnen het raster.');
+    return;
     }
 
     // Verstuur de pixel-update naar de server
@@ -269,7 +269,7 @@
     grid[`${x},${y}`] = selectedColor;
     drawGrid();
     startCooldown(30);
-});
+    });
 
 
     // Zoom en Pan
