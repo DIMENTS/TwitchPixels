@@ -135,228 +135,165 @@
   <div id="cooldown-indicator">Cooldown: 30s</div>
 
   <script>
-    const socket = new WebSocket('wss://tpwebsocket-production.up.railway.app');
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
-    const startOverlay = document.getElementById('start-overlay');
-    const startButton = document.getElementById('start-button');
-    const overlayShownKey = 'startOverlayShown';
-    const cooldownIndicator = document.getElementById('cooldown-indicator');
-    const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
-    const cellSize = 10;
-    const colors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#800000', '#00008B', '#FFFF00'];
-    let selectedColor = colors[0];
-    let grid = {};
-    let activeUsers = {};
-    let scale = 1, offsetX = 0, offsetY = 0;
-    let isPanning = false, startX, startY;
-    let cooldownActive = false;
+  const socket = new WebSocket('wss://tpwebsocket-production.up.railway.app');
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const startOverlay = document.getElementById('start-overlay');
+  const startButton = document.getElementById('start-button');
+  const overlayShownKey = 'startOverlayShown';
+  const cooldownIndicator = document.getElementById('cooldown-indicator');
+  const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
+  const cellSize = 10;
+  const colors = ['#000000', '#FFFFFF', '#FF0000', '#00FF00', '#0000FF', '#800000', '#00008B', '#FFFF00'];
+  let selectedColor = colors[0];
+  let grid = {};
+  let activeUsers = {};
+  let scale = 1, offsetX = 0, offsetY = 0;
+  let isPanning = false, startX, startY;
+  let cooldownActive = false;
 
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    // Center grid initially
-    offsetX = (canvas.width - gridSize * cellSize) / 2;
-    offsetY = (canvas.height - gridSize * cellSize) / 2;
-
-    const drawGrid = () => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.save();
-      ctx.translate(offsetX, offsetY);
-      ctx.scale(scale, scale);
-
-      // Draw base grid
-      for (let x = 0; x < gridSize; x++) {
-        for (let y = 0; y < gridSize; y++) {
-          ctx.fillStyle = '#FFFFFF';
-          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        }
-      }
-
-      // Draw pixels
-      Object.entries(grid).forEach(([key, color]) => {
-        const [x, y] = key.split(',').map(Number);
-        ctx.fillStyle = color;
-        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-      });
-
-      ctx.restore();
-    };
-
-    drawGrid();
-
-    // WebSocket handlers
-    socket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-
-      if (data.type === 'init') {
-        grid = data.grid;
-        drawGrid();
-      } else if (data.type === 'update_pixel') {
-        const { x, y, color } = data;
-        grid[`${x},${y}`] = color;
-        drawGrid();
-      } else if (data.type === 'mouse_move') {
-        activeUsers[data.userId] = { x: data.x / scale - offsetX / scale, y: data.y / scale - offsetY / scale };
-        drawGrid();
-      }
-    };
-
-    // Plaats pixel
-    canvas.addEventListener('click', (e) => {
-  if (cooldownActive) return; // Blokkeer als de cooldown actief is
-
-  const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
-  const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
-
-  // Verzend pixelplaatsing naar de server
-  socket.send(JSON.stringify({
-    type: 'place_pixel',
-    userId,
-    x,
-    y,
-    color: selectedColor,
-  }));
-
-  // Voeg de pixel lokaal toe aan de grid
-  grid[`${x},${y}`] = selectedColor;
-  drawGrid();
-
-  // Start de cooldown-timer
-  startCooldown(30);
-});
-
-// Voor touch ondersteuning
-let lastTouchDistance = null;
-
-canvas.addEventListener('touchstart', (e) => {
-  if (e.touches.length === 1) {
-    isPanning = true;
-    startX = e.touches[0].clientX - offsetX;
-    startY = e.touches[0].clientY - offsetY;
-  } else if (e.touches.length === 2) {
-    lastTouchDistance = getTouchDistance(e);
-  }
-});
-
-canvas.addEventListener('touchmove', (e) => {
-  e.preventDefault(); // Voorkomt scrollen op mobiel
-  if (e.touches.length === 1 && isPanning) {
-    const touch = e.touches[0];
-    offsetX = touch.clientX - startX;
-    offsetY = touch.clientY - startY;
-    drawGrid();
-  } else if (e.touches.length === 2) {
-    const newDistance = getTouchDistance(e);
-    if (lastTouchDistance) {
-      const delta = newDistance / lastTouchDistance;
-      scale *= delta;
-      scale = Math.min(Math.max(0.5, scale), 10); // Beperk de zoomfactor
-      lastTouchDistance = newDistance;
-      drawGrid();
-    }
-  }
-});
-
-canvas.addEventListener('touchend', (e) => {
-  if (e.touches.length < 2) {
-    lastTouchDistance = null;
-  }
-  isPanning = false;
-});
-
-// Helper functie om afstand tussen twee aanrakingen te berekenen
-function getTouchDistance(e) {
-  const dx = e.touches[0].clientX - e.touches[1].clientX;
-  const dy = e.touches[0].clientY - e.touches[1].clientY;
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-// Responsive canvas aanpassen bij schermgrootte
-window.addEventListener('resize', () => {
+  // Zorg ervoor dat het canvas de volledige grootte van het venster gebruikt
   canvas.width = window.innerWidth;
   canvas.height = window.innerHeight;
+
+  // Center grid initially
+  offsetX = (canvas.width - gridSize * cellSize) / 2;
+  offsetY = (canvas.height - gridSize * cellSize) / 2;
+
+  // Teken de grid
+  const drawGrid = () => {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.save();
+    ctx.translate(offsetX, offsetY);
+    ctx.scale(scale, scale);
+
+    // Teken de basisgrid
+    for (let x = 0; x < gridSize; x++) {
+      for (let y = 0; y < gridSize; y++) {
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+      }
+    }
+
+    // Teken de pixels
+    Object.entries(grid).forEach(([key, color]) => {
+      const [x, y] = key.split(',').map(Number);
+      ctx.fillStyle = color;
+      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+    });
+
+    ctx.restore();
+  };
+
+  // Voer initieel tekenen uit
   drawGrid();
-});
 
+  // Startknop functionaliteit
+  startButton.addEventListener('click', () => {
+    startOverlay.style.display = 'none'; // Verberg de overlay
+    localStorage.setItem(overlayShownKey, 'true'); // Sla op dat de overlay is getoond
+  });
 
+  // Controleer of de overlay al eerder is getoond
+  if (localStorage.getItem(overlayShownKey) === 'true') {
+    startOverlay.style.display = 'none'; // Verberg de overlay als deze al eerder is getoond
+  }
 
-    // Muis beweging
-    canvas.addEventListener('mousemove', (event) => {
+  // Functie om te zoomen
+  canvas.addEventListener('wheel', (event) => {
+    event.preventDefault();
+
+    const zoomFactor = 1.05;
+    const mouseX = (event.clientX - offsetX) / scale;
+    const mouseY = (event.clientY - offsetY) / scale;
+
+    if (event.deltaY < 0) scale *= zoomFactor; // Zoom in
+    else scale /= zoomFactor; // Zoom uit
+
+    offsetX = event.clientX - mouseX * scale;
+    offsetY = event.clientY - mouseY * scale;
+
+    drawGrid();
+  });
+
+  // Andere functies voor interactie
+  canvas.addEventListener('mousedown', (event) => {
+    isPanning = true;
+    startX = event.clientX;
+    startY = event.clientY;
+  });
+
+  canvas.addEventListener('mousemove', (event) => {
     if (isPanning) {
-        offsetX = event.clientX - startX;
-        offsetY = event.clientY - startY;
-
-        if (gridSize * cellSize * scale > canvas.width) {
-            const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-            offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
-        }
-        else{
-            offsetX = (canvas.width - gridSize * cellSize * scale) / 2
-        }
-
-        if (gridSize * cellSize * scale > canvas.height) {
-            const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-            offsetY = Math.max(Math.min(offsetY, maxOffsetY), -maxOffsetY);
-        }
-        else{
-            offsetY = (canvas.height - gridSize * cellSize * scale) / 2
-        }
-
-        drawGrid();
-    }
-    else{
-        const rect = canvas.getBoundingClientRect();
-        const x = (event.clientX - rect.left - offsetX) / scale;
-        const y = (event.clientY - rect.top - offsetY) / scale;
-
-        socket.send(JSON.stringify({ type: 'move_mouse', userId, x, y }));
-    }
-});
-
-    canvas.addEventListener('mousedown', (event) => {
-      isPanning = true;
-      startX = event.clientX - offsetX;
-      startY = event.clientY - offsetY;
-    });
-
-    canvas.addEventListener('mouseup', () => {
-      isPanning = false;
-    });
-
-    canvas.addEventListener('wheel', (event) => {
-      event.preventDefault();
-
-      const zoomFactor = 1.05;
-      const mouseX = (event.clientX - offsetX) / scale;
-      const mouseY = (event.clientY - offsetY) / scale;
-
-      if (event.deltaY < 0) scale *= zoomFactor;
-      else scale /= zoomFactor;
-
-      offsetX = event.clientX - mouseX * scale;
-      offsetY = event.clientY - mouseY * scale;
-
+      offsetX += event.clientX - startX;
+      offsetY += event.clientY - startY;
+      startX = event.clientX;
+      startY = event.clientY;
       drawGrid();
+    }
+  });
+
+  canvas.addEventListener('mouseup', () => {
+    isPanning = false;
+  });
+
+  canvas.addEventListener('mouseleave', () => {
+    isPanning = false;
+  });
+
+  // Voeg kleuren toe aan de color picker
+  const colorPicker = document.getElementById('color-picker');
+  colors.forEach((color) => {
+    const colorDiv = document.createElement('div');
+    colorDiv.classList.add('color');
+    colorDiv.style.backgroundColor = color;
+    colorDiv.addEventListener('click', () => {
+      document.querySelectorAll('.color').forEach(c => c.classList.remove('selected'));
+      colorDiv.classList.add('selected');
+      selectedColor = color;
     });
-    
-    // Color picker
-    const colorPicker = document.getElementById('color-picker');
-    colors.forEach((color) => {
-      const div = document.createElement('div');
-      div.className = 'color';
-      div.style.backgroundColor = color;
+    colorPicker.appendChild(colorDiv);
+  });
 
-      if (color === selectedColor) div.classList.add('selected');
+  // WebSocket interactie
+  socket.addEventListener('open', () => {
+    console.log('Connected to WebSocket server');
+  });
 
-      div.addEventListener('click', () => {
-        document.querySelectorAll('.color').forEach((el) => el.classList.remove('selected'));
-        div.classList.add('selected');
-        selectedColor = color;
-      });
+  socket.addEventListener('message', (event) => {
+    const data = JSON.parse(event.data);
+    if (data.type === 'update') {
+      grid[data.pixel] = data.color;
+      drawGrid();
+    }
+  });
 
-      colorPicker.appendChild(div);
-    });
-  </script>
+  canvas.addEventListener('click', (event) => {
+    if (cooldownActive) return;
+
+    const x = Math.floor((event.clientX - offsetX) / (scale * cellSize));
+    const y = Math.floor((event.clientY - offsetY) / (scale * cellSize));
+    const pixel = `${x},${y}`;
+
+    grid[pixel] = selectedColor;
+    drawGrid();
+
+    socket.send(JSON.stringify({ type: 'place', pixel, color: selectedColor }));
+
+    // Start cooldown
+    cooldownActive = true;
+    cooldownIndicator.style.display = 'block';
+    let cooldownTime = 30;
+    const cooldownInterval = setInterval(() => {
+      cooldownTime--;
+      cooldownIndicator.textContent = `Cooldown: ${cooldownTime}s`;
+      if (cooldownTime <= 0) {
+        clearInterval(cooldownInterval);
+        cooldownIndicator.style.display = 'none';
+        cooldownActive = false;
+      }
+    }, 1000);
+  });
+</script>
 </body>
 </html>
