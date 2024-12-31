@@ -12,11 +12,14 @@
     }
 
     #canvas {
-    display: block;
-    cursor: crosshair;
-    border: 2px solid #000;
-    box-sizing: border-box;
-}
+      display: block;
+      cursor: crosshair;
+      border: 2px solid #000;
+      box-sizing: border-box;
+      /* Maximale breedte en hoogte instellen */
+      max-width: 100vw;
+      max-height: 100vh;
+    }
 
     #color-picker {
       position: fixed;
@@ -139,8 +142,9 @@
     const startButton = document.getElementById('start-button');
     const overlayShownKey = 'startOverlayShown';
     const cooldownIndicator = document.getElementById('cooldown-indicator');
-    const gridSize = 500;
+    const gridSize = 1000;
     const cellSize = 10;
+    const canvasBorder = 2;
     
     const colors = [
     '#000000', // Zwart
@@ -164,8 +168,11 @@
     let cooldownActive = false;
 
     // Canvas grootte instellen
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
+    const canvasWidth = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerWidth);
+    const canvasHeight = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerHeight);
+
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
 
     // Start Overlay Verwijderen
     startButton.addEventListener('click', () => {
