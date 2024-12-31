@@ -14,12 +14,11 @@
     #canvas {
     display: block;
     cursor: crosshair;
+    border: 2px solid #000;
     box-sizing: border-box;
     max-width: 100vw;
     max-height: 100vh;
-    margin: auto;
-    background-color: #c4c4c4; /* Achtergrondkleur */
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2); /* Schaduw */
+    margin: auto; /* Centeert het canvas */
 }
 
     #color-picker {
@@ -143,9 +142,9 @@
     const startButton = document.getElementById('start-button');
     const overlayShownKey = 'startOverlayShown';
     const cooldownIndicator = document.getElementById('cooldown-indicator');
-    const gridSize = 500;
+    const gridSize = 500; // Afmeting van het tekengebied (aantal cellen)
     const cellSize = 10;
-    let scale = 1, offsetX = 0, offsetY = 0;
+    const canvasBorder = 2;
     
     const colors = [
     '#000000', // Zwart
@@ -164,6 +163,7 @@
 
     let grid = {};
     let activeUsers = {};
+    let scale = 1, offsetX = 0, offsetY = 0;
     let isPanning = false, startX, startY;
     let cooldownActive = false;
 
@@ -210,48 +210,18 @@
 };
 
 
-    function drawGrid() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
+    // Grid tekenen
+    const drawGrid = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.save();
+      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-    // Schalen en transleren
-    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
-
-    // Teken de grid (nu met vaste grootte)
-    ctx.fillStyle = '#c4c4c4';
-    ctx.fillRect(0, 0, gridSize * cellSize, gridSize * cellSize);
-
-    // Teken de pixels
-    Object.entries(grid).forEach(([key, color]) => {
-        const [x, y] = key.split(',').map(Number);
-        ctx.fillStyle = color;
-        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-    });
-
-    // Teken actieve muisindicaties
-    Object.values(activeUsers).forEach(({ x, y }) => {
-        ctx.beginPath();
-        ctx.arc(x, y, 5 / scale, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-        ctx.fill();
-    });
-
-    ctx.restore();
-}
-
-function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    //Centreren van de grid op de canvas
-    offsetX = (canvas.width - gridSize * cellSize * scale) / 2;
-    offsetY = (canvas.height - gridSize * cellSize * scale) / 2;
-    offsetX = Math.max(0, offsetX)
-    offsetY = Math.max(0, offsetY)
-    drawGrid();
-}
-
-resizeCanvas();
-window.addEventListener('resize', resizeCanvas);
+      for (let x = 0; x < gridSize; x++) {
+        for (let y = 0; y < gridSize; y++) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+        }
+      }
 
       // Teken pixels
       Object.entries(grid).forEach(([key, color]) => {
@@ -419,10 +389,13 @@ window.addEventListener('resize', () => {
     scale += event.deltaY * -0.001;
     scale = Math.min(Math.max(0.5, scale), 4);
 
+    // Correctie voor offset tijdens zoomen (belangrijk!)
     const zoomFactor = scale / prevScale;
     offsetX = (offsetX - event.clientX) * zoomFactor + event.clientX;
     offsetY = (offsetY - event.clientY) * zoomFactor + event.clientY;
 
+
+    // Grens controle (zoals in de vorige reactie, maar nu correct met de zoom correctie)
     if (gridSize * cellSize * scale > canvas.width) {
         const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
         offsetX = Math.max(Math.min(offsetX, maxOffsetX), -maxOffsetX);
