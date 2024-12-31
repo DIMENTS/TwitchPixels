@@ -250,55 +250,6 @@
         }
     };
 
-    canvas.addEventListener('touchstart', (e) => {
-  const touch = e.changedTouches[0];
-  const x = Math.floor((touch.clientX - offsetX) / (cellSize * scale));
-  const y = Math.floor((touch.clientY - offsetY) / (cellSize * scale));
-
-  // Check if coordinates are within the grid
-  if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
-    alert('Je kunt hier geen pixels plaatsen! Kies een plek binnen het raster.');
-    return;
-  }
-
-  // Send pixel update to server and update locally
-  socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
-  grid[`${x},${y}`] = selectedColor;
-  drawGrid();
-  startCooldown(30);
-});
-
-canvas.addEventListener('touchmove', (e) => {
-  e.preventDefault();
-  const touch = e.changedTouches[0];
-  const prevX = (e.previousTouches && e.previousTouches[0].clientX) || touch.clientX;
-  const prevY = (e.previousTouches && e.previousTouches[0].clientY) || touch.clientY;
-  const deltaX = touch.clientX - prevX;
-  const deltaY = touch.clientY - prevY;
-
-  offsetX -= deltaX;
-  offsetY -= deltaY;
-
-  // Ensure offset stays within bounds
-  offsetX = Math.max(0, offsetX);
-  offsetY = Math.max(0, offsetY);
-  if (gridSize * cellSize * scale > canvas.width) {
-    const maxOffsetX = (gridSize * cellSize * scale) - canvas.width;
-    offsetX = Math.min(offsetX, maxOffsetX);
-  } else {
-    offsetX = (canvas.width - gridSize * cellSize * scale) / 2;
-  }
-
-  if (gridSize * cellSize * scale > canvas.height) {
-    const maxOffsetY = (gridSize * cellSize * scale) - canvas.height;
-    offsetY = Math.min(offsetY, maxOffsetY);
-  } else {
-    offsetY = (canvas.height - gridSize * cellSize * scale) / 2;
-  }
-
-  drawGrid();
-});
-
     // Pixel plaatsen
     canvas.addEventListener('click', (e) => {
     if (cooldownActive) return;
