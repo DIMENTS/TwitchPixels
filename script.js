@@ -118,9 +118,17 @@ const drawGrid = () => {
 
 drawGrid();
 
+// Stuur een init-bericht met userId bij verbinding
+socket.onopen = () => {
+    socket.send(JSON.stringify({ type: 'init', userId }));
+};
+
 // WebSocket handlers
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    if (data.type === 'error') {
+        alert(data.message);
+    }
     if (data.type === 'init') {
         grid = data.grid;
         drawGrid();
