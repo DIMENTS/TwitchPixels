@@ -159,6 +159,13 @@
     let isPanning = false, startX, startY;
     let cooldownActive = false;
 
+    // Pinch-to-zoom en touch-movement variabelen
+    let isDragging = false;
+    let isPinching = false;
+    let lastTouchX = 0;
+    let lastTouchY = 0;
+    let initialDistance = 0;
+
     // Bereken canvas-grootte en centreren
     const calculateCanvasDimensions = () => {
         canvas.width = Math.min(gridSize * cellSize + 2 * canvasBorder, window.innerWidth);
@@ -250,27 +257,72 @@
         }
     };
 
-    // Pixel plaatsen
-    canvas.addEventListener('click', (e) => {
+    function placePixel(clientX, clientY) {
     if (cooldownActive) return;
-    
+
     // Bereken de cell-coördinaten
-    const x = Math.floor((e.clientX - offsetX) / (cellSize * scale));
-    const y = Math.floor((e.clientY - offsetY) / (cellSize * scale));
-    
+    const x = Math.floor((clientX - offsetX) / (cellSize * scale));
+    const y = Math.floor((clientY - offsetY) / (cellSize * scale));
+
     // Controleer of de coördinaten binnen het grid vallen
     if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
-    alert('Je kunt hier geen pixels plaatsen! Kies een plek binnen het raster.');
-    return;
+        alert('Je kunt hier geen pixels plaatsen! Kies een plek binnen het raster.');
+        return;
     }
 
     // Verstuur de pixel-update naar de server
-    socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
-    grid[`${x},${y}`] = selectedColor;
-    drawGrid();
-    startCooldown(30);
+      socket.send(JSON.stringify({ type: 'place_pixel', userId, x, y, color: selectedColor }));
+      grid[`${x},${y}`] = selectedColor;
+      drawGrid();
+      startCooldown(30);
+    }
+
+      canvas.addEventListener('click', (e) => {
+      placePixel(e.clientX, e.clientY);
     });
 
+    canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 1) {
+            isDragging = true;
+            lastTouchX = e.touches[0].clientX;
+            lastTouchY = e.touches[0].clientY;
+        } else if (e.touches.length === 2) {
+            isPinching = true;
+            initialDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+        }
+    });
+
+    canvas.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        if (isDragging && !isPinching) {
+            const currentX = e.touches[0].clientX;
+            const currentY = e.touches[0].clientY;
+            offsetX += (currentX - lastTouchX) / scale;
+            offsetY += (currentY - lastTouchY) / scale;
+            lastTouchX = currentX;
+            lastTouchY = currentY;
+            drawGrid();
+        } else if (isPinching && e.touches.length === 2) {
+            const currentDistance = Math.hypot(
+                e.touches[0].clientX - e.touches[1].clientX,
+                e.touches[0].clientY - e.touches[1].clientY
+            );
+            const zoomFactor = currentDistance / initialDistance;
+            scale = Math.min(Math.max(0.5, scale * zoomFactor), 4);
+            initialDistance = currentDistance;
+            drawGrid();
+        }
+    });
+
+    canvas.addEventListener('touchend', (e) => {
+        if (e.touches.length === 0) {
+            isDragging = false;
+            isPinching = false;
+        }
+    });
 
     // Zoom en Pan
     canvas.addEventListener('wheel', (event) => {
