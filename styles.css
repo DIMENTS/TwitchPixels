@@ -1,111 +1,148 @@
 body {
-  margin: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-}
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+    }
 
-#canvas {
-  display: block;
-  cursor: crosshair;
-  background-color: #c4c4c4;
-  box-sizing: border-box;
-  max-width: 100vw;
-  max-height: 100vh;
-  margin: auto;
-}
+    #canvas {
+    display: block;
+    cursor: crosshair;
+    background-color: #c4c4c4; /* Achtergrondkleur */
+    box-sizing: border-box;
+    max-width: 100vw;
+    max-height: 100vh;
+    margin: auto; /* Centeert het canvas */
+    }
 
-#color-picker {
-  position: fixed;
-  bottom: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 10px;
-  padding: 10px;
-  background: rgba(255, 255, 255, 0.8);
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
-}
 
-.color {
+    #color-picker {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 10px;
+      padding: 10px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 10px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+    }
+
+    .color {
   width: 30px;
   height: 30px;
   border-radius: 50%;
   cursor: pointer;
-  border: 1px solid #c4c4c4;
+  border: 1px solid #c4c4c4; /* Light grey border */
   transition: border 0.2s;
 }
 
-.color:hover,
-.color.selected {
-  border-color: black;
+    .color:hover,
+    .color.selected {
+      border-color: black;
+    }
+
+    #start-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 10;
+    text-align: center; /* Center de tekst horizontaal */
 }
 
-#start-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  color: white;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  z-index: 10;
-  text-align: center;
+    #start-overlay h1 {
+    font-size: 2em;
+    margin-bottom: 20px;
 }
 
-#start-overlay h1 {
-  font-size: 2em;
-  margin-bottom: 20px;
-}
-
-.twitch-purple {
-  color: #9146FF;
+    .twitch-purple {
+    color: #9146FF; /* Twitch paars */
 }
 
 .place-offwhite {
-  color: #F5F5F5;
+    color: #F5F5F5; /* Off-white / bijna wit */
 }
 
 #start-overlay p {
-  font-size: 1.2em;
-  margin-bottom: 40px;
-  padding: 0 20px;
-  max-width: 840px;
-  line-height: 1.5;
+    font-size: 1.2em;
+    margin-bottom: 40px;
+    padding: 0 20px;
+    max-width: 840px; /* Maximale breedte van de tekst */
+    line-height: 1.5; /* Voor betere leesbaarheid */
 }
 
-#start-overlay button {
-  padding: 15px 30px;
-  font-size: 1.2em;
-  background: #F5F5F5;
-  color: black;
-  border: none;
-  border-radius: 50px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
+    #start-overlay button {
+    padding: 15px 30px; /* Iets grotere padding */
+    font-size: 1.2em;
+    background: #F5F5F5; /* Off-white achtergrond */
+    color: black; /* Zwarte tekst voor contrast */
+    border: none;
+    border-radius: 50px; /* Ronde knop */
+    cursor: pointer;
+    transition: background-color 0.3s ease; /* Soepele overgang bij hover */
 }
 
 #start-overlay button:hover {
-  background: #E0E0E0;
+    background: #E0E0E0; /* Iets donkerder off-white bij hover */
 }
 
-#cooldown-indicator {
+    #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2em;
+}
+
+.control img {
+    width: 40px;
+    height: 40px;
+}
+
+.control.touch {
+    display: none; /* Verberg voor desktop */
+}
+
+/* Toon touch-specific controls op mobiele apparaten */
+@media (hover: none) and (pointer: coarse) {
+    .control.touch {
+        display: flex;
+    }
+
+    .control:not(.touch) {
+        display: none; /* Verberg desktop controls */
+    }
+}
+
+
+    #cooldown-indicator {
   position: fixed;
-  bottom: 80px;
+  bottom: 80px; /* Plaatsing net boven de color picker */
   left: 50%;
   transform: translateX(-50%);
-  background: rgba(255, 0, 0, 0.8);
-  color: white;
+  background: rgba(255, 0, 0, 0.8); /* Roodachtige achtergrond */
+  color: white; /* Witte tekst */
   padding: 10px 20px;
   border-radius: 5px;
   font-size: 1.2em;
   display: none;
   z-index: 10;
-  text-align: center;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+  text-align: center; /* Centraal uitlijnen */
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Schaduw voor zichtbaarheid */
 }
