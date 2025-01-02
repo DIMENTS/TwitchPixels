@@ -270,7 +270,25 @@
     requestAnimationFrame(updateCooldown);
 };
 
+    const offscreenCanvas = document.createElement('canvas');
+    const offscreenCtx = offscreenCanvas.getContext('2d');
 
+    // Pre-render het grid
+    offscreenCanvas.width = gridSize * cellSize;
+    offscreenCanvas.height = gridSize * cellSize;
+
+    const preRenderGrid = () => {
+        for (let x = 0; x < gridSize; x++) {
+            for (let y = 0; y < gridSize; y++) {
+                offscreenCtx.fillStyle = '#FFFFFF';
+                offscreenCtx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+            }
+        }
+    };
+    preRenderGrid();
+
+
+    
     // Grid tekenen
     const drawGrid = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
