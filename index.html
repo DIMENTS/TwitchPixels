@@ -102,6 +102,43 @@
     background: #E0E0E0; /* Iets donkerder off-white bij hover */
 }
 
+    #controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+.control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.2em;
+}
+
+.control img {
+    width: 40px;
+    height: 40px;
+    filter: invert(100%); /* Iconen wit maken voor donkere achtergrond */
+}
+
+.control.touch {
+    display: none; /* Verberg voor desktop */
+}
+
+/* Toon touch-specific controls op mobiele apparaten */
+@media (hover: none) and (pointer: coarse) {
+    .control.touch {
+        display: flex;
+    }
+
+    .control:not(.touch) {
+        display: none; /* Verberg desktop controls */
+    }
+}
+
+
     #cooldown-indicator {
       position: fixed;
       top: 20px;
@@ -128,10 +165,31 @@
     </h1>
     <p>
         Klik op een pixel om een kleur te plaatsen. Je moet 30 seconden wachten voordat je weer een pixel kunt plaatsen.
-        Gebruik je muis of pijltjestoetsen om over de grid te navigeren. Zoom in en uit met je scrollwheel.
     </p>
+
+    <!-- Controls sectie -->
+    <div id="controls">
+        <div class="control">
+            <img src="arrow-keys-icon.svg" alt="Arrow keys" />
+            <span>Gebruik pijltjestoetsen om te bewegen</span>
+        </div>
+        <div class="control">
+            <img src="mouse-scroll-icon.svg" alt="Scroll wheel" />
+            <span>Zoom in en uit met je scrollwheel</span>
+        </div>
+        <div class="control">
+            <img src="mouse-icon.svg" alt="Mouse click" />
+            <span>Klik om een pixel te plaatsen</span>
+        </div>
+        <div class="control touch">
+            <img src="touch-gesture-icon.svg" alt="Touch gestures" />
+            <span>Swipe om te bewegen en pinch om te zoomen</span>
+        </div>
+    </div>
+
     <button id="start-button">Start</button>
 </div>
+
 
   <div id="cooldown-indicator">Cooldown: 30s</div>
 
