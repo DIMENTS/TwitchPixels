@@ -145,6 +145,8 @@ socket.onmessage = (event) => {
     }
 };
 
+const errorIndicator = document.getElementById('error-indicator');
+
 function placePixel(clientX, clientY) {
     if (cooldownActive) return;
 
@@ -154,7 +156,10 @@ function placePixel(clientX, clientY) {
 
     // Controleer of de coördinaten binnen het grid vallen
     if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) {
-        alert('Je kunt hier geen pixels plaatsen! Kies een plek binnen het raster.');
+        errorIndicator.style.display = 'block';
+        setTimeout(() => {
+            errorIndicator.style.display = 'none';
+        }, 3000); // Verberg na 3 seconden
         return;
     }
 
