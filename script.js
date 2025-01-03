@@ -127,9 +127,28 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'error') {
-        alert(data.message);
-    }
-    if (data.type === 'init') {
+        // Hier vangen we de foutmelding op
+        if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
+            // Toon de melding aan de gebruiker (bijvoorbeeld met een alert of een ander element)
+            alert('Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.');
+
+            // Of, beter nog, gebruik een element op de pagina:
+            const errorIndicator = document.getElementById('error-indicator'); // Hergebruik je bestaande element
+            errorIndicator.textContent = 'Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.';
+            errorIndicator.style.display = 'block';
+            setTimeout(() => {
+                errorIndicator.style.display = 'none';
+                errorIndicator.textContent = "Oeps, hier kun je niet tekenen."; // Reset de tekst
+            }, 5000); // Verberg na 5 seconden
+        } else if (data.message === 'Cooldown active') {
+                        const cooldownIndicator = document.getElementById('cooldown-indicator');
+                        cooldownIndicator.style.display = 'block';
+        } else {
+            // Behandel andere fouten (indien nodig)
+            console.error('WebSocket error:', data.message);
+            alert("Er is een fout opgetreden."); // Geef een algemene fout melding
+        }
+    } else if (data.type === 'init') {
         grid = data.grid;
         drawGrid();
     } else if (data.type === 'update_pixel') {
