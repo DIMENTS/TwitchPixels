@@ -146,3 +146,19 @@ body {
   text-align: center; /* Centraal uitlijnen */
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* Schaduw voor zichtbaarheid */
 }
+
+#error-indicator {
+    position: fixed;
+    bottom: 80px; /* Net boven de cooldown indicator */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(255, 0, 0, 0.8); /* Roodachtige achtergrond */
+    color: white; /* Witte tekst */
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 1.2em;
+    display: none;
+    z-index: 10;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
