@@ -163,19 +163,20 @@ body {
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
 
-.cursor {
-    position: absolute;
-    width: 20px; /* Pas aan naar de grootte van je SVG */
-    height: 20px;
-    pointer-events: none; /* Zodat de cursor niet interfereert met muisinteracties */
-    transform: translate(-50%, -50%); /* Centreer de cursor op de muispositie */
-    z-index: 1000; /* Zorg ervoor dat de cursor boven andere elementen wordt weergegeven */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.cursor svg {
+#cursor-container { /* Style voor de container */
+    position: absolute; /* Belangrijk! */
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    fill: currentColor;
+    pointer-events: none; /* Zodat de cursors geen muisinteracties blokkeren */
+    z-index: 1000; /* Zorg ervoor dat de cursors boven het canvas liggen */
+}
+
+.cursor {
+    position: absolute; /* Belangrijk! */
+    pointer-events: none;
+    width: 20px; /* Of de breedte van je SVG */
+    height: 20px; /* Of de hoogte van je SVG */
+    transform: translate(-50%, -100%); /* Centreert de cursor op de muispositie */
 }
