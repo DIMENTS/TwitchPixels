@@ -124,70 +124,64 @@ socket.onopen = () => {
 
 // WebSocket handlers
 socket.onmessage = (event) => {
-    const data = JSON.parse(event.data);
-    if (data.type === 'mouse_move') {
-        if (!activeUsers[data.userId]) {
-            activeUsers[data.userId] = {color: getRandomColor()};
-        }
-        if (!activeUsers[data.userId].element) { // Controleer of het element al bestaat
-            const cursor = document.createElement('div');
-            cursor.classList.add('cursor');
-            cursor.id = `cursor-${data.userId}`;
-            cursor.style.backgroundColor = activeUsers[data.userId].color;
-            cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`;
-            document.body.appendChild(cursor);
-            activeUsers[data.userId].element = cursor; // Sla het element op in het activeUsers object
-        }
+    try { // Voeg een try-catch block toe voor JSON parsing
+        const data = JSON.parse(event.data);
 
-        const cursor = activeUsers[data.userId].element; // Haal het element op
-        if (cursor) { // Nog een extra check voor de zekerheid
-            cursor.style.left = data.x * scale - offsetX + 'px';
-            cursor.style.top = data.y * scale - offsetY + 'px';
-        }
-    } else if (data.type === 'user_disconnected') {
-        if (activeUsers[data.userId] && activeUsers[data.userId].element) {
-            activeUsers[data.userId].element.remove();
-        }
-        delete activeUsers[data.userId];
-        drawGrid();
-    }
-};
-    
-    if (data.type === 'error') {
-        // Hier vangen we de foutmelding op
-        if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
-            // Toon de melding aan de gebruiker (bijvoorbeeld met een alert of een ander element)
-            alert('Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.');
+        if (data.type === 'mouse_move') {
+            if (!activeUsers[data.userId]) {
+                activeUsers[data.userId] = { color: getRandomColor() };
+            }
+            if (!activeUsers[data.userId].element) {
+                const cursor = document.createElement('div');
+                cursor.classList.add('cursor');
+                cursor.id = `cursor-${data.userId}`;
+                cursor.style.backgroundColor = activeUsers[data.userId].color;
+                cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`;
+                document.body.appendChild(cursor);
+                activeUsers[data.userId].element = cursor;
+            }
 
-            // Of, beter nog, gebruik een element op de pagina:
-            const errorIndicator = document.getElementById('error-indicator'); // Hergebruik je bestaande element
-            errorIndicator.textContent = 'Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.';
-            errorIndicator.style.display = 'block';
-            setTimeout(() => {
-                errorIndicator.style.display = 'none';
-                errorIndicator.textContent = "Oeps, hier kun je niet tekenen."; // Reset de tekst
-            }, 5000); // Verberg na 5 seconden
-        } else if (data.message === 'Cooldown active') {
-                        const cooldownIndicator = document.getElementById('cooldown-indicator');
-                        cooldownIndicator.style.display = 'block';
-        } else {
-            // Behandel andere fouten (indien nodig)
-            console.error('WebSocket error:', data.message);
-            alert("Er is een fout opgetreden."); // Geef een algemene fout melding
+            const cursor = activeUsers[data.userId].element;
+            if (cursor) {
+                cursor.style.left = data.x * scale - offsetX + 'px';
+                cursor.style.top = data.y * scale - offsetY + 'px';
+            }
+        } else if (data.type === 'user_disconnected') {
+            if (activeUsers[data.userId] && activeUsers[data.userId].element) {
+                activeUsers[data.userId].element.remove();
+            }
+            delete activeUsers[data.userId];
+            drawGrid();
+        } else if (data.type === 'error') { // Deze staat nu op de juiste plek
+            if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
+                const errorIndicator = document.getElementById('error-indicator');
+                errorIndicator.textContent = 'Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.';
+                errorIndicator.style.display = 'block';
+                setTimeout(() => {
+                    errorIndicator.style.display = 'none';
+                    errorIndicator.textContent = "Oeps, hier kun je niet tekenen.";
+                }, 5000);
+            } else if (data.message === 'Cooldown active') {
+                const cooldownIndicator = document.getElementById('cooldown-indicator');
+                cooldownIndicator.style.display = 'block';
+                                setTimeout(() => {
+                                        cooldownIndicator.style.display = 'none';
+                                }, 30000);
+            } else {
+                console.error('WebSocket error:', data.message);
+                alert("Er is een fout opgetreden.");
+            }
+        } else if (data.type === 'init') {
+            grid = data.grid;
+            drawGrid();
+        } else if (data.type === 'update_pixel') {
+            const { x, y, color } = data;
+            grid[`${x},${y}`] = color;
+            drawGrid();
         }
-    } else if (data.type === 'init') {
-        grid = data.grid;
-        drawGrid();
-    } else if (data.type === 'update_pixel') {
-        const { x, y, color } = data;
-        grid[`${x},${y}`] = color;
-        drawGrid();
-    } else if (data.type === 'mouse_move') {
-        activeUsers[data.userId] = {
-            x: data.x / scale - offsetX / scale,
-            y: data.y / scale - offsetY / scale,
-        };
-        drawGrid();
+    } catch (error) {
+        console.error("Error parsing JSON:", error);
+        // Optioneel: Stuur een foutmelding terug naar de server
     }
 };
 
