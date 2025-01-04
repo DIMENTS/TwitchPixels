@@ -156,9 +156,14 @@ socket.onmessage = (event) => {
 
             const cursor = activeUsers[data.userId].element;
             if (cursor) {
-                cursor.style.left = data.x * canvas.offsetWidth + 'px';
-                cursor.style.top = data.y * canvas.offsetHeight + 'px';
-            }
+            // Bereken de absolute positie op het *geschaalde* canvas
+            const absoluteX = data.x * canvas.offsetWidth;
+            const absoluteY = data.y * canvas.offsetHeight;
+
+            // Compenseer voor pan en zoom
+            cursor.style.left = (absoluteX - offsetX) / scale + 'px'; // Belangrijke correctie
+            cursor.style.top = (absoluteY - offsetY) / scale + 'px'; // Belangrijke correctie
+    }
         } else if (data.type === 'user_disconnected') {
             if (activeUsers[data.userId] && activeUsers[data.userId].element) {
                 activeUsers[data.userId].element.remove();
@@ -196,6 +201,17 @@ socket.onmessage = (event) => {
         console.error("Error parsing JSON:", error);
         // Optioneel: Stuur een foutmelding terug naar de server
     }
+};
+
+socket.onclose = () => {
+    // Verwijder alle lokale cursors
+    for (const userId in activeUsers) {
+        if (activeUsers[userId] && activeUsers[userId].element) {
+            activeUsers[userId].element.remove();
+        }
+        delete activeUsers[userId];
+    }
+    drawGrid();//Herteken het grid zodat de cursor ook daadwerkelijk weg gaat.
 };
 
 function getRandomColor() {
