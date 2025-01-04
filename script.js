@@ -1,5 +1,6 @@
 const socket = new WebSocket('wss://tpwebsocket-production.up.railway.app');
 const canvas = document.getElementById('canvas');
+const cursorContainer = document.getElementById('cursor-container');
 const ctx = canvas.getContext('2d');
 const startOverlay = document.getElementById('start-overlay');
 const startButton = document.getElementById('start-button');
@@ -34,6 +35,33 @@ const calculateCanvasDimensions = () => {
     offsetY = Math.max(0, offsetY);
 };
 calculateCanvasDimensions();
+
+async function loadCursor(userId, color) {
+    try {
+        const response = await fetch('/icons/UserCursor.svg');
+        if (!response.ok) {
+            throw new Error(`Failed to fetch cursor: ${response.status}`);
+        }
+        const svgText = await response.text();
+
+        // Maak een nieuw cursor element aan voor deze gebruiker
+        const cursor = document.createElement('div');
+        cursor.className = 'cursor';
+        cursor.innerHTML = svgText;
+
+        // Pas de kleur aan (indien nodig)
+        const path = cursor.querySelector('path');
+        if (path) {
+            path.setAttribute('fill', color);
+        }
+
+        cursorContainer.appendChild(cursor); // Voeg toe aan de container!
+        return cursor;
+    } catch (error) {
+        console.error("Error loading cursor:", error);
+        return null;
+    }
+}
 
 // Overlay functionaliteit
 startButton.addEventListener('click', () => {
@@ -136,49 +164,35 @@ socket.onopen = () => {
 };
 
 // WebSocket handlers
-socket.onmessage = (event) => {
+socket.onmessage = async (event) => {
     try {
         const data = JSON.parse(event.data);
 
         if (data.type === 'mouse_move') {
             if (!activeUsers[data.userId]) {
-                activeUsers[data.userId] = { color: getRandomColor(), x: 0, y: 0 }; // Initialiseer x en y
-            }
-            if (!activeUsers[data.userId].element) {
-                const cursor = document.createElement('div');
-                cursor.classList.add('cursor');
-                cursor.id = `cursor-${data.userId}`;
-                cursor.style.backgroundColor = activeUsers[data.userId].color;
-                cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`;
-                document.body.appendChild(cursor);
-                activeUsers[data.userId].element = cursor;
+                activeUsers[data.userId] = { color: getRandomColor() };
+                activeUsers[data.userId].element = await loadCursor(data.userId, activeUsers[data.userId].color);
             }
 
             const cursor = activeUsers[data.userId].element;
-    if (cursor) {
-        // data.x en data.y zijn *percentages* (0-1) van de canvas afmetingen
+            if (cursor) {
+                const absoluteX = data.x * canvas.offsetWidth;
+                const absoluteY = data.y * canvas.offsetHeight;
+                const xNaPan = absoluteX - offsetX;
+                const yNaPan = absoluteY - offsetY;
+                const xCorrected = xNaPan / scale;
+                const yCorrected = yNaPan / scale;
 
-        // 1. Bereken de absolute positie op het *volledige* (geschaalde) canvas
-        const absoluteX = data.x * canvas.offsetWidth; // Of canvas.clientWidth
-        const absoluteY = data.y * canvas.offsetHeight; // Of canvas.clientHeight
-
-        // 2. Compenseer voor de pan (offsetX en offsetY)
-        const xNaPan = absoluteX - offsetX;
-        const yNaPan = absoluteY - offsetY;
-
-        // 3. Compenseer voor de zoom (scale)
-        const xCorrected = xNaPan / scale;
-        const yCorrected = yNaPan / scale;
-
-        // Zet de berekende waarden om naar pixels en pas ze toe op de cursor
-        cursor.style.left = xCorrected + 'px';
-        cursor.style.top = yCorrected + 'px';
-    }
-        } else if (data.type === 'user_disconnected') {
-            if (activeUsers[data.userId] && activeUsers[data.userId].element) {
+                cursor.style.left = xCorrected + 'px';
+                cursor.style.top = yCorrected + 'px';
+            }
+        }
+        if (data.type === 'user_disconnected') {
+           if (activeUsers[data.userId] && activeUsers[data.userId].element) {
                 activeUsers[data.userId].element.remove();
             }
             delete activeUsers[data.userId];
+        }
             drawGrid();
         } else if (data.type === 'error') {
             if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
@@ -214,14 +228,12 @@ socket.onmessage = (event) => {
 };
 
 socket.onclose = () => {
-    // Verwijder alle lokale cursors
     for (const userId in activeUsers) {
         if (activeUsers[userId] && activeUsers[userId].element) {
             activeUsers[userId].element.remove();
         }
         delete activeUsers[userId];
     }
-    drawGrid();//Herteken het grid zodat de cursor ook daadwerkelijk weg gaat.
 };
 
 function getRandomColor() {
