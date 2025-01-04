@@ -126,29 +126,32 @@ socket.onopen = () => {
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
     if (data.type === 'mouse_move') {
-        // Update de positie van de cursor van de andere gebruiker
         if (!activeUsers[data.userId]) {
-            // Maak een nieuw cursor element aan
+            activeUsers[data.userId] = {color: getRandomColor()};
+        }
+        if (!activeUsers[data.userId].element) { // Controleer of het element al bestaat
             const cursor = document.createElement('div');
             cursor.classList.add('cursor');
             cursor.id = `cursor-${data.userId}`;
-            cursor.style.backgroundColor = getRandomColor();
-            cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`; // Voorbeeld SVG
+            cursor.style.backgroundColor = activeUsers[data.userId].color;
+            cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`;
             document.body.appendChild(cursor);
-            activeUsers[data.userId] = cursor;
+            activeUsers[data.userId].element = cursor; // Sla het element op in het activeUsers object
         }
 
-        const cursor = activeUsers[data.userId];
-        cursor.style.left = data.x + 'px';
-        cursor.style.top = data.y + 'px';
-    } else if (data.type === 'user_disconnected') {
-        // Verwijder de cursor van de disconnected gebruiker
-        const cursorToRemove = document.getElementById(`cursor-${data.userId}`);
-        if (cursorToRemove) {
-            cursorToRemove.remove();
-            delete activeUsers[data.userId];
+        const cursor = activeUsers[data.userId].element; // Haal het element op
+        if (cursor) { // Nog een extra check voor de zekerheid
+            cursor.style.left = data.x * scale - offsetX + 'px';
+            cursor.style.top = data.y * scale - offsetY + 'px';
         }
+    } else if (data.type === 'user_disconnected') {
+        if (activeUsers[data.userId] && activeUsers[data.userId].element) {
+            activeUsers[data.userId].element.remove();
+        }
+        delete activeUsers[data.userId];
+        drawGrid();
     }
+};
     
     if (data.type === 'error') {
         // Hier vangen we de foutmelding op
