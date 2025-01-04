@@ -11,7 +11,6 @@ const canvasBorder = 2;
 
 const colors = ['#000000', '#c4c4c4', '#2351a5', '#ff4500', '#FFFF00', '#008C45'];
 let selectedColor = colors[0];
-const userId = Math.random().toString(36).substr(2, 9);
 let grid = {};
 const activeUsers = {};
 let scale = 1, offsetX = 0, offsetY = 0;
