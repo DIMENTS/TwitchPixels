@@ -13,7 +13,7 @@ const colors = ['#000000', '#c4c4c4', '#2351a5', '#ff4500', '#FFFF00', '#008C45'
 let selectedColor = colors[0];
 const userId = Math.random().toString(36).substr(2, 9);
 let grid = {};
-let activeUsers = {};
+const activeUsers = {};
 let scale = 1, offsetX = 0, offsetY = 0;
 let isPanning = false, startX, startY;
 let cooldownActive = false;
@@ -126,6 +126,31 @@ socket.onopen = () => {
 // WebSocket handlers
 socket.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    if (data.type === 'mouse_move') {
+        // Update de positie van de cursor van de andere gebruiker
+        if (!activeUsers[data.userId]) {
+            // Maak een nieuw cursor element aan
+            const cursor = document.createElement('div');
+            cursor.classList.add('cursor');
+            cursor.id = `cursor-${data.userId}`;
+            cursor.style.backgroundColor = getRandomColor();
+            cursor.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z" fill="currentColor"/></svg>`; // Voorbeeld SVG
+            document.body.appendChild(cursor);
+            activeUsers[data.userId] = cursor;
+        }
+
+        const cursor = activeUsers[data.userId];
+        cursor.style.left = data.x + 'px';
+        cursor.style.top = data.y + 'px';
+    } else if (data.type === 'user_disconnected') {
+        // Verwijder de cursor van de disconnected gebruiker
+        const cursorToRemove = document.getElementById(`cursor-${data.userId}`);
+        if (cursorToRemove) {
+            cursorToRemove.remove();
+            delete activeUsers[data.userId];
+        }
+    }
+    
     if (data.type === 'error') {
         // Hier vangen we de foutmelding op
         if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
@@ -163,6 +188,25 @@ socket.onmessage = (event) => {
         drawGrid();
     }
 };
+
+function getRandomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+const userId = Math.random().toString(36).substring(2, 15); // Genereer een unieke user ID
+
+// Stuur muisbewegingen naar de server
+canvas.addEventListener('mousemove', (event) => {
+    const x = event.offsetX * scale + offsetX;
+    const y = event.offsetY * scale + offsetY;
+
+    socket.send(JSON.stringify({ type: 'mouse_move', userId: userId, x: x, y: y }));
+});
 
 const errorIndicator = document.getElementById('error-indicator');
 
