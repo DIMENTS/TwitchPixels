@@ -167,8 +167,8 @@ body {
     position: absolute; /* Belangrijk! */
     top: 0;
     left: 0;
-    width: 16px;
-    height: 16px;
+    width: 16%;
+    height: 16%;
     pointer-events: none; /* Zodat de cursors geen muisinteracties blokkeren */
     z-index: 1000; /* Zorg ervoor dat de cursors boven het canvas liggen */
 }
