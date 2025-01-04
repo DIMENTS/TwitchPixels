@@ -86,34 +86,47 @@ const preRenderGrid = () => {
 preRenderGrid();
 
 // Grid tekenen
-const drawGrid = () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.save();
-    ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+function drawGrid() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.save();
+  ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
 
-    // Bereken zichtbare cellen
-    const startX = Math.max(0, Math.floor(-offsetX / cellSize / scale));
-    const endX = Math.min(gridSize, Math.ceil((canvas.width - offsetX) / cellSize / scale));
-    const startY = Math.max(0, Math.floor(-offsetY / cellSize / scale));
-    const endY = Math.min(gridSize, Math.ceil((canvas.height - offsetY) / cellSize / scale));
+  // Bereken zichtbare cellen
+  const startX = Math.max(0, Math.floor(-offsetX / cellSize / scale));
+  const endX = Math.min(gridSize, Math.ceil((canvas.width - offsetX) / cellSize / scale));
+  const startY = Math.max(0, Math.floor(-offsetY / cellSize / scale));
+  const endY = Math.min(gridSize, Math.ceil((canvas.height - offsetY) / cellSize / scale));
 
-    for (let x = startX; x < endX; x++) {
-        for (let y = startY; y < endY; y++) {
-            ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        }
+  // Teken achtergrond cellen
+  for (let x = startX; x < endX; x++) {
+    for (let y = startY; y < endY; y++) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
     }
+  }
 
-    Object.entries(grid).forEach(([key, color]) => {
-        const [x, y] = key.split(',').map(Number);
-        if (x >= startX && x < endX && y >= startY && y < endY) {
-            ctx.fillStyle = color;
-            ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
-        }
-    });
+  // Teken cellen van de grid data
+  Object.entries(grid).forEach(([key, color]) => {
+    const [x, y] = key.split(',').map(Number);
+    if (x >= startX && x < endX && y >= startY && y < endY) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+    }
+  });
 
-    ctx.restore();
-};
+  // Teken cursors
+  for (const userId in activeUsers) {
+    const user = activeUsers[userId];
+    if (user && user.x !== undefined && user.y !== undefined) {
+      ctx.fillStyle = user.color;
+      ctx.beginPath();
+      ctx.arc(user.x * canvas.offsetWidth - offsetX + scale / 2, user.y * canvas.offsetHeight - offsetY + scale / 2, scale / 4, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  }
+
+  ctx.restore();
+}
 
 drawGrid();
 
@@ -124,12 +137,12 @@ socket.onopen = () => {
 
 // WebSocket handlers
 socket.onmessage = (event) => {
-    try { // Voeg een try-catch block toe voor JSON parsing
+    try {
         const data = JSON.parse(event.data);
 
         if (data.type === 'mouse_move') {
             if (!activeUsers[data.userId]) {
-                activeUsers[data.userId] = { color: getRandomColor() };
+                activeUsers[data.userId] = { color: getRandomColor(), x: 0, y: 0 }; // Initialiseer x en y
             }
             if (!activeUsers[data.userId].element) {
                 const cursor = document.createElement('div');
@@ -143,8 +156,8 @@ socket.onmessage = (event) => {
 
             const cursor = activeUsers[data.userId].element;
             if (cursor) {
-                cursor.style.left = data.x * scale - offsetX + 'px';
-                cursor.style.top = data.y * scale - offsetY + 'px';
+                cursor.style.left = data.x * canvas.offsetWidth + 'px';
+                cursor.style.top = data.y * canvas.offsetHeight + 'px';
             }
         } else if (data.type === 'user_disconnected') {
             if (activeUsers[data.userId] && activeUsers[data.userId].element) {
@@ -152,7 +165,7 @@ socket.onmessage = (event) => {
             }
             delete activeUsers[data.userId];
             drawGrid();
-        } else if (data.type === 'error') { // Deze staat nu op de juiste plek
+        } else if (data.type === 'error') {
             if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
                 const errorIndicator = document.getElementById('error-indicator');
                 errorIndicator.textContent = 'Je plaatst te snel pixels. Wacht even en probeer het dan opnieuw.';
@@ -164,9 +177,9 @@ socket.onmessage = (event) => {
             } else if (data.message === 'Cooldown active') {
                 const cooldownIndicator = document.getElementById('cooldown-indicator');
                 cooldownIndicator.style.display = 'block';
-                                setTimeout(() => {
-                                        cooldownIndicator.style.display = 'none';
-                                }, 30000);
+                setTimeout(() => {
+                    cooldownIndicator.style.display = 'none';
+                }, 30000);
             } else {
                 console.error('WebSocket error:', data.message);
                 alert("Er is een fout opgetreden.");
@@ -198,10 +211,9 @@ const userId = Math.random().toString(36).substring(2, 15); // Genereer een unie
 
 // Stuur muisbewegingen naar de server
 canvas.addEventListener('mousemove', (event) => {
-    const x = event.offsetX * scale + offsetX;
-    const y = event.offsetY * scale + offsetY;
-
-    socket.send(JSON.stringify({ type: 'mouse_move', userId: userId, x: x, y: y }));
+    const x = event.offsetX / canvas.offsetWidth; // Percentage van de canvasbreedte
+    const y = event.offsetY / canvas.offsetHeight; // Percentage van de canvashoogte
+    socket.send(JSON.stringify({ type: 'mouse_move', userId: userId, x: x, y: y }))
 });
 
 const errorIndicator = document.getElementById('error-indicator');
