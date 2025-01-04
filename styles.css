@@ -167,8 +167,8 @@ body {
     position: absolute; /* Belangrijk! */
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 16px;
+    height: 16px;
     pointer-events: none; /* Zodat de cursors geen muisinteracties blokkeren */
     z-index: 1000; /* Zorg ervoor dat de cursors boven het canvas liggen */
 }
@@ -176,7 +176,7 @@ body {
 .cursor {
     position: absolute; /* Belangrijk! */
     pointer-events: none;
-    width: 20px; /* Of de breedte van je SVG */
-    height: 20px; /* Of de hoogte van je SVG */
+    width: 16px; /* Of de breedte van je SVG */
+    height: 16px; /* Of de hoogte van je SVG */
     transform: translate(-50%, -100%); /* Centreert de cursor op de muispositie */
 }
