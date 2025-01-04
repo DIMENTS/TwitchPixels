@@ -155,14 +155,24 @@ socket.onmessage = (event) => {
             }
 
             const cursor = activeUsers[data.userId].element;
-            if (cursor) {
-            // Bereken de absolute positie op het *geschaalde* canvas
-            const absoluteX = data.x * canvas.offsetWidth;
-            const absoluteY = data.y * canvas.offsetHeight;
+    if (cursor) {
+        // data.x en data.y zijn *percentages* (0-1) van de canvas afmetingen
 
-            // Compenseer voor pan en zoom
-            cursor.style.left = (absoluteX - offsetX) / scale + 'px'; // Belangrijke correctie
-            cursor.style.top = (absoluteY - offsetY) / scale + 'px'; // Belangrijke correctie
+        // 1. Bereken de absolute positie op het *volledige* (geschaalde) canvas
+        const absoluteX = data.x * canvas.offsetWidth; // Of canvas.clientWidth
+        const absoluteY = data.y * canvas.offsetHeight; // Of canvas.clientHeight
+
+        // 2. Compenseer voor de pan (offsetX en offsetY)
+        const xNaPan = absoluteX - offsetX;
+        const yNaPan = absoluteY - offsetY;
+
+        // 3. Compenseer voor de zoom (scale)
+        const xCorrected = xNaPan / scale;
+        const yCorrected = yNaPan / scale;
+
+        // Zet de berekende waarden om naar pixels en pas ze toe op de cursor
+        cursor.style.left = xCorrected + 'px';
+        cursor.style.top = yCorrected + 'px';
     }
         } else if (data.type === 'user_disconnected') {
             if (activeUsers[data.userId] && activeUsers[data.userId].element) {
