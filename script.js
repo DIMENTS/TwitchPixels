@@ -186,14 +186,11 @@ socket.onmessage = async (event) => {
                 cursor.style.left = xCorrected + 'px';
                 cursor.style.top = yCorrected + 'px';
             }
-        }
-        if (data.type === 'user_disconnected') {
-           if (activeUsers[data.userId] && activeUsers[data.userId].element) {
-                activeUsers[data.userId].element.remove();
+        } else if (data.type === 'user_disconnected') {
+            if (activeUsers[data.userId] && activeUsers[data.userId].element) {
+                cursorContainer.removeChild(activeUsers[data.userId].element);
             }
             delete activeUsers[data.userId];
-        }
-            drawGrid();
         } else if (data.type === 'error') {
             if (data.message === 'Te veel verzoeken. Probeer het later opnieuw.') {
                 const errorIndicator = document.getElementById('error-indicator');
@@ -220,20 +217,22 @@ socket.onmessage = async (event) => {
             const { x, y, color } = data;
             grid[`${x},${y}`] = color;
             drawGrid();
+        } else {
+            console.warn("Onbekend berichttype:", data.type); // Belangrijk voor debugging
         }
     } catch (error) {
-        console.error("Error parsing JSON:", error);
-        // Optioneel: Stuur een foutmelding terug naar de server
+        console.error("Fout bij het verwerken van bericht:", error);
     }
 };
 
 socket.onclose = () => {
     for (const userId in activeUsers) {
         if (activeUsers[userId] && activeUsers[userId].element) {
-            activeUsers[userId].element.remove();
+            cursorContainer.removeChild(activeUsers[userId].element);
         }
         delete activeUsers[userId];
     }
+    console.log("WebSocket verbinding gesloten.");
 };
 
 function getRandomColor() {
