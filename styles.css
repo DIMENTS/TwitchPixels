@@ -162,3 +162,20 @@ body {
     text-align: center;
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
 }
+
+.cursor {
+    position: absolute;
+    width: 20px; /* Pas aan naar de grootte van je SVG */
+    height: 20px;
+    pointer-events: none; /* Zodat de cursor niet interfereert met muisinteracties */
+    transform: translate(-50%, -50%); /* Centreer de cursor op de muispositie */
+    z-index: 1000; /* Zorg ervoor dat de cursor boven andere elementen wordt weergegeven */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.cursor svg {
+    width: 100%;
+    height: 100%;
+    fill: currentColor;
+}
